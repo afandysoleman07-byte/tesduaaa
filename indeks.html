@@ -1,0 +1,240 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Buku Kontrol WBP Lapas Tobelo</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: #f4f7f6;
+            margin: 0;
+            padding: 20px;
+            color: #333;
+        }
+        h1, h2 {
+            text-align: center;
+            color: #2c3e50;
+            margin-bottom: 5px;
+        }
+        h2 {
+            margin-top: 0;
+            font-size: 1.2em;
+            color: #555;
+            margin-bottom: 20px;
+        }
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            background: #fff;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 10px;
+        }
+        th, td {
+            border: 1px solid #ddd;
+            padding: 8px 10px;
+            text-align: center;
+            vertical-align: middle;
+        }
+        th {
+            background-color: #34495e;
+            color: white;
+            position: sticky;
+            top: 0;
+            z-index: 2;
+        }
+        .block-header {
+            background-color: #16a085;
+            color: white;
+            font-weight: bold;
+            text-align: left;
+            padding-left: 15px;
+        }
+        .subtotal-row {
+            background-color: #e8f6f3;
+            font-weight: bold;
+            color: #2c3e50;
+        }
+        input[type="number"] {
+            width: 70px;
+            padding: 6px;
+            text-align: center;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+            font-size: 1em;
+        }
+        input[type="text"] {
+            width: 95%;
+            padding: 6px;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+            font-size: 0.9em;
+        }
+        .jumlah-riil {
+            font-weight: bold;
+            font-size: 1.1em;
+            color: #d35400;
+        }
+        .total-row {
+            background-color: #2c3e50;
+            color: white;
+            font-weight: bold;
+            font-size: 1.1em;
+        }
+        .total-row td {
+            border: 1px solid #1a252f;
+        }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <h1>Buku Kontrol Jumlah Warga Binaan</h1>
+    <h2>Lembaga Pemasyarakatan Kelas IIB Tobelo</h2>
+    
+    <table>
+        <thead>
+            <tr>
+                <th width="12%">Kamar</th>
+                <th width="10%">Isi Kamar</th>
+                <th width="10%">Luar Kamar</th>
+                <th width="10%">Luar Lapas</th>
+                <th width="10%">Jumlah Riil</th>
+                <th width="20%">Keterangan / Lokasi</th>
+                <th width="28%">Nama Warga Binaan (Luar Kamar/Lapas)</th>
+            </tr>
+        </thead>
+        <tbody id="table-body">
+            <!-- Data baris kamar dan subtotal di-generate oleh JavaScript -->
+        </tbody>
+        <tfoot>
+            <tr class="total-row">
+                <td style="text-align: right; padding-right: 15px;">TOTAL KESELURUHAN</td>
+                <td id="grand-isi">0</td>
+                <td id="grand-luar-kamar">0</td>
+                <td id="grand-luar-lapas">0</td>
+                <td id="grand-riil">0</td>
+                <td colspan="2"></td>
+            </tr>
+        </tfoot>
+    </table>
+</div>
+
+<script>
+    // Konfigurasi Blok dan jumlah kamar
+    const lapasData = [
+        { blockName: 'Blok Anak', rooms: 4 },
+        { blockName: 'Blok A', rooms: 6 },
+        { blockName: 'Blok B', rooms: 9 },
+        { blockName: 'Blok C', rooms: 9 },
+        { blockName: 'Blok D', rooms: 4 },
+        { blockName: 'Blok Wanita', rooms: 2 }
+    ];
+
+    const tableBody = document.getElementById('table-body');
+
+    // Fungsi untuk membuat baris tabel
+    function generateTable() {
+        lapasData.forEach((block, blockIndex) => {
+            // Baris Judul Blok
+            let headerRow = document.createElement('tr');
+            headerRow.innerHTML = `<td colspan="7" class="block-header">${block.blockName}</td>`;
+            tableBody.appendChild(headerRow);
+
+            // Baris Kamar
+            for (let i = 1; i <= block.rooms; i++) {
+                let row = document.createElement('tr');
+                row.className = `room-row block-${blockIndex}`; // Penanda baris ini milik blok mana
+                
+                row.innerHTML = `
+                    <td>Kamar ${i}</td>
+                    <td><input type="number" min="0" class="input-isi" value="0" oninput="calculate()"></td>
+                    <td><input type="number" min="0" class="input-luar-kamar" value="0" oninput="calculate()"></td>
+                    <td><input type="number" min="0" class="input-luar-lapas" value="0" oninput="calculate()"></td>
+                    <td class="jumlah-riil">0</td>
+                    <td><input type="text" placeholder="Lokasi..."></td>
+                    <td><input type="text" placeholder="Nama WBP..."></td>
+                `;
+                tableBody.appendChild(row);
+            }
+
+            // Baris Subtotal per Blok
+            let subtotalRow = document.createElement('tr');
+            subtotalRow.className = `subtotal-row`;
+            subtotalRow.innerHTML = `
+                <td style="text-align: right; padding-right: 15px;">Subtotal ${block.blockName}</td>
+                <td id="sub-isi-${blockIndex}">0</td>
+                <td id="sub-luar-kamar-${blockIndex}">0</td>
+                <td id="sub-luar-lapas-${blockIndex}">0</td>
+                <td id="sub-riil-${blockIndex}">0</td>
+                <td colspan="2"></td>
+            `;
+            tableBody.appendChild(subtotalRow);
+        });
+    }
+
+    // Fungsi untuk menghitung otomatis (Subtotal Blok & Total Keseluruhan)
+    function calculate() {
+        let grandIsi = 0;
+        let grandLuarKamar = 0;
+        let grandLuarLapas = 0;
+        let grandRiil = 0;
+
+        lapasData.forEach((block, blockIndex) => {
+            let subIsi = 0;
+            let subLuarKamar = 0;
+            let subLuarLapas = 0;
+            let subRiil = 0;
+
+            // Ambil semua baris kamar yang ada di blok ini
+            const roomsInBlock = document.querySelectorAll(`.block-${blockIndex}`);
+            
+            roomsInBlock.forEach(row => {
+                let isi = parseInt(row.querySelector('.input-isi').value) || 0;
+                let luarKamar = parseInt(row.querySelector('.input-luar-kamar').value) || 0;
+                let luarLapas = parseInt(row.querySelector('.input-luar-lapas').value) || 0;
+                
+                // Rumus Riil per kamar
+                let riil = isi - luarKamar - luarLapas;
+                row.querySelector('.jumlah-riil').innerText = riil;
+
+                // Tambahkan ke subtotal blok
+                subIsi += isi;
+                subLuarKamar += luarKamar;
+                subLuarLapas += luarLapas;
+                subRiil += riil;
+            });
+
+            // Update angka Subtotal di tabel
+            document.getElementById(`sub-isi-${blockIndex}`).innerText = subIsi;
+            document.getElementById(`sub-luar-kamar-${blockIndex}`).innerText = subLuarKamar;
+            document.getElementById(`sub-luar-lapas-${blockIndex}`).innerText = subLuarLapas;
+            document.getElementById(`sub-riil-${blockIndex}`).innerText = subRiil;
+
+            // Tambahkan ke Grand Total Keseluruhan
+            grandIsi += subIsi;
+            grandLuarKamar += subLuarKamar;
+            grandLuarLapas += subLuarLapas;
+            grandRiil += subRiil;
+        });
+
+        // Update angka Total Keseluruhan di bagian paling bawah
+        document.getElementById('grand-isi').innerText = grandIsi;
+        document.getElementById('grand-luar-kamar').innerText = grandLuarKamar;
+        document.getElementById('grand-luar-lapas').innerText = grandLuarLapas;
+        document.getElementById('grand-riil').innerText = grandRiil;
+    }
+
+    // Eksekusi fungsi saat web pertama kali dibuka
+    generateTable();
+    calculate();
+</script>
+
+</body>
+</html>
